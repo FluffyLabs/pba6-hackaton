@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 contract RatingVote {
-    address public payoutRecipient;
-    uint256 public totalAmount;
-    address[] public voters;
+    address public payoutRecipient = 0x449f92952d0eca6c194483fc002fB01FBd5E2c68;
+    uint256 public totalAmount = 100;
+    address[] public voters = [0xA4B7F1fB03B9FA2AeF9D7d7e730AD41c879e9812];
     mapping(address => bool) public isVoter;
     mapping(address => bool) public hasVoted;
     mapping(address => uint256) public votes;
@@ -14,20 +14,11 @@ contract RatingVote {
     
     event VoteCast(address voter, uint256 rating);
     event PayoutExecuted(address recipient, uint256 amount);
-    event StateReset();
     
-    constructor(address _payoutRecipient, address[] memory _voters, uint256 _totalAmount) payable {
-        require(msg.value == _totalAmount, "Must fund contract with the total amount");
-        require(_voters.length > 0, "Must have at least one voter");
+    constructor() payable {
         
-        payoutRecipient = _payoutRecipient;
-        totalAmount = _totalAmount;
-        
-        for (uint256 i = 0; i < _voters.length; i++) {
-            address voter = _voters[i];
-            require(!isVoter[voter], "Duplicate voter address");
-            
-            voters.push(voter);
+        for (uint256 i = 0; i < voters.length; i++) {
+            address voter = voters[i];
             isVoter[voter] = true;
         }
     }
@@ -41,7 +32,7 @@ contract RatingVote {
         hasVoted[msg.sender] = true;
         voteCount++;
         
-        emit VoteCast(msg.sender, rating);
+        // emit VoteCast(msg.sender, rating);
         
         if (voteCount == voters.length) {
             executePayout();
@@ -73,22 +64,6 @@ contract RatingVote {
         }
         
         emit PayoutExecuted(payoutRecipient, payoutAmount);
-    }
-    
-    function resetState() external payable {
-        require(payoutExecuted, "Payout must be executed before reset");
-        require(msg.value == totalAmount, "Must fund contract with the total amount");
-        
-        // Reset voter state
-        for (uint256 i = 0; i < voters.length; i++) {
-            hasVoted[voters[i]] = false;
-            votes[voters[i]] = 0;
-        }
-        
-        voteCount = 0;
-        payoutExecuted = false;
-        
-        emit StateReset();
     }
     
     function getVoterCount() external view returns (uint256) {
